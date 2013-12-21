@@ -7,8 +7,9 @@ Q.include("Sprites, Scenes, Input, 2D, Audio,Anim, Touch, UI");
 Q.setup("juego");
 Q.controls();
 Q.touch();
+Q.enableSound();
 
-Q.load("mosaicos_escenario.png, mapa_escena1_terminado.tmx, mosaicos_mario_enano.png, mosaicos_enemigos_32x32.png, mosaicos_enemigos_32x46.png", function() {
+Q.load("mosaicos_escenario.png, mapa_escena1_terminado.tmx, mosaicos_mario_enano.png, mosaicos_enemigos_32x32.png, mosaicos_enemigos_32x46.png, salto_enano.mp3", function() {
 
 	Q.sheet("enemigos_bajos", "mosaicos_enemigos_32x32.png", {
 		tileH : 32,
@@ -50,18 +51,56 @@ Q.animations("mario_enano_anim", {
 	},
 });
 
+//---------- SO-------------------//
+Q.animations("goomba_anim", {
+	caminar : {
+		frames : [1, 0],
+		rate : 1 / 4
+	},
+	aplastar : {
+		frames : [3],
+		rate : 1 / 2,
+		trigger : "aplastado",
+		loop : false
+	}
+});
+
+Q.animations("tortuga_verde_anim", {
+	caminar : {
+		frames : [0, 1],
+		rate : 1 / 4,
+		loop : false
+	}
+});
+
 Q.Sprite.extend("Goomba", {
 	init : function(p) {
 
 		this._super(p, {
 			sheet : "enemigos_bajos",
+			sprite : "goomba_anim",
 			vx : -120,
 			x : 180,
 			y : 40,
 			frame : 0
 		});
 
-		this.add("2d, aiBounce");
+		this.add("2d, aiBounce, animation");
+		this.play("caminar");
+
+		this.on("aplastado", function() {
+			this.destroy();
+		});
+
+		this.on("bump.top", function(colision) {
+
+			if (colision.obj.isA("Mario")) {
+
+				colision.obj.p.vy = -300;
+				this.p.vx = 0;
+				this.play("aplastar");
+			}
+		});
 	}
 });
 
@@ -70,6 +109,7 @@ Q.Sprite.extend("TortugaVerde", {
 
 		this._super(p, {
 			sheet : "enemigos_altos",
+			sprite : "tortuga_verde_anim",
 			x : 180,
 			y : 40,
 			vx : 120,
@@ -77,7 +117,22 @@ Q.Sprite.extend("TortugaVerde", {
 			jumpSpeed : -300
 		});
 
-		this.add("2d, aiBounce");
+		this.add("2d, aiBounce, animation");
+
+	},
+	step : function() {
+
+		if (this.p.vx > 0) {
+
+			this.p.flip = "x";
+			this.play("caminar");
+
+		} else if (this.p.vx < 0) {
+
+			this.p.flip = false;
+			this.play("caminar");
+
+		}
 	}
 });
 
@@ -112,7 +167,16 @@ Q.Sprite.extend("Mario", {
 			this.play("quieto");
 		} else if (this.p.vy !== 0) {
 
+			if (this.p.vy < 0) {
+
+				Q.audio.play("salto_enano.mp3", {
+					debounce : 1000
+				});
+
+			}
+
 			this.play("saltar");
+
 		}
 	}
 });
@@ -148,18 +212,18 @@ Q.scene("escena1", function(stage) {
 		x : true,
 		y : true
 	}, {
-		minX : 0,
+		minX : 35,
 		minY : 0,
-		maxX : colisiones.p.w,
+		maxX : colisiones.p.w - 35,
 		maxY : colisiones.p.h
 	});
 
 	var posicionPiso = colisiones.p.h - (32 * 4);
-	
+
 	stage.insert(new Q.Goomba({
 		y : posicionPiso
 	}));
-	
+
 	stage.insert(new Q.TortugaVerde({
 		y : posicionPiso
 	}));

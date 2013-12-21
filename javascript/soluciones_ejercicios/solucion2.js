@@ -50,18 +50,36 @@ Q.animations("mario_enano_anim", {
 	},
 });
 
+//---------- SO-------------------//
+Q.animations("goomba_anim", {
+	caminar : {
+		frames : [1, 0],
+		rate : 1 / 4
+	}
+});
+
+Q.animations("tortuga_verde_anim", {
+	caminar : {
+		frames : [0, 1],
+		rate : 1 / 4,
+		loop : false
+	}
+});
+
 Q.Sprite.extend("Goomba", {
 	init : function(p) {
 
 		this._super(p, {
 			sheet : "enemigos_bajos",
+			sprite : "goomba_anim",
 			vx : -120,
 			x : 180,
 			y : 40,
 			frame : 0
 		});
 
-		this.add("2d, aiBounce");
+		this.add("2d, aiBounce, animation");
+		this.play("caminar");
 	}
 });
 
@@ -70,6 +88,7 @@ Q.Sprite.extend("TortugaVerde", {
 
 		this._super(p, {
 			sheet : "enemigos_altos",
+			sprite : "tortuga_verde_anim",
 			x : 180,
 			y : 40,
 			vx : 120,
@@ -77,7 +96,22 @@ Q.Sprite.extend("TortugaVerde", {
 			jumpSpeed : -300
 		});
 
-		this.add("2d, aiBounce");
+		this.add("2d, aiBounce, animation");
+
+	},
+	step : function() {
+
+		if (this.p.vx > 0) {
+
+			this.p.flip = "x";
+			this.play("caminar");
+
+		} else if (this.p.vx < 0) {
+
+			this.p.flip = false;
+			this.play("caminar");
+
+		}
 	}
 });
 
@@ -148,18 +182,18 @@ Q.scene("escena1", function(stage) {
 		x : true,
 		y : true
 	}, {
-		minX : 0,
+		minX : 35,
 		minY : 0,
-		maxX : colisiones.p.w,
+		maxX : colisiones.p.w-35,
 		maxY : colisiones.p.h
 	});
 
 	var posicionPiso = colisiones.p.h - (32 * 4);
-	
+
 	stage.insert(new Q.Goomba({
 		y : posicionPiso
 	}));
-	
+
 	stage.insert(new Q.TortugaVerde({
 		y : posicionPiso
 	}));
