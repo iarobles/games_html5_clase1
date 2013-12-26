@@ -2,6 +2,8 @@ var Q = new Quintus({
 	development : true
 });
 
+
+
 Q.include("Scenes, Sprites, 2D, Input, Anim, Touch");
 Q.setup("juego");
 Q.controls();
